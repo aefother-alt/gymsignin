@@ -5,7 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GymCheck — Class Sign-In</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4ZNGCVSCWT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-4ZNGCVSCWT');
+</script>
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -857,6 +864,9 @@ async function handleMonthlyCheckin(){
   await saveRecord(record);
   lastRecordId = record.id;
 
+  // Track in Google Analytics
+  gtag('event', 'monthly_checkin', { plan: PLANS[m.plan].label, class_num: used });
+
   const limit = PLANS[m.plan].limit;
   document.getElementById('msName').textContent = m.name.toUpperCase();
   document.getElementById('msSub').textContent  = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
@@ -1016,7 +1026,8 @@ async function handleNewCheckin(){
   await saveRecord(record);
   lastRecordId = record.id;
 
-  // Build payment URLs
+  // Track in Google Analytics
+  gtag('event', 'new_checkin', { plan: PLANS[plan].label, amount: amt, coupon: activeCoupon ? activeCoupon.code : 'none' });
   const tag      = cfg.cashapp.replace('$','');
   const cashUrl  = `https://cash.app/$${tag}/${amt}`;
   const zelleUrl = `https://enroll.zellepay.com/qr-codes?data=${encodeURIComponent(JSON.stringify({alias:cfg.zelle,amount:amt}))}`;
