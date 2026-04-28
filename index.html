@@ -1,1 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GymCheck — Class Sign-In</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;--border:#2a2a2a;--accent:#e8ff47;--accent2:#47ffb8;--danger:#ff4757;--text:#f0f0f0;--muted:#666;--cash:#00d632;--zelle:#6d1ed4;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
 
+nav{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,10,10,0.97);backdrop-filter:blur(10px);z-index:100;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:var(--accent);}
+.logo span{color:var(--text);}
+nav .nav-btns{display:flex;gap:7px;}
+nav button{background:transparent;border:1px solid var(--border);color:var(--muted);padding:7px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;}
+nav button.active,nav button:hover{border-color:var(--accent);color:var(--accent);}
+
+.view{display:none;padding:28px 18px;max-width:560px;margin:0 auto;}
+.view.active{display:block;}
+#adminView{max-width:980px;}
+
+/* STEPS */
+.step{display:none;}
+.step.active{display:block;}
+.step-indicator{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:28px;}
+.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:13px;border:2px solid var(--border);color:var(--muted);transition:all .3s;}
+.step-dot.done{background:var(--accent);border-color:var(--accent);color:#000;}
+.step-dot.active{border-color:var(--accent);color:var(--accent);}
+.step-line{width:40px;height:2px;background:var(--border);transition:background .3s;}
+.step-line.done{background:var(--accent);}
+
+.page-header{text-align:center;margin-bottom:28px;}
+.page-header h1{font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:4px;line-height:1;}
+.page-header h1 span{color:var(--accent);}
+.page-header p{color:var(--muted);margin-top:7px;font-size:13px;letter-spacing:1px;text-transform:uppercase;}
+
+.form-group{margin-bottom:16px;}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:6px;}
+input[type="text"],input[type="tel"],input[type="password"],select{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:13px 14px;border-radius:8px;font-size:16px;font-family:'DM Sans',sans-serif;transition:border-color .2s;-webkit-appearance:none;}
+input:focus,select:focus{outline:none;border-color:var(--accent);}
+select option{background:var(--surface2);}
+
+.primary-btn{width:100%;background:var(--accent);color:#000;border:none;padding:15px;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:3px;cursor:pointer;transition:transform .15s,opacity .15s;}
+.primary-btn:hover{opacity:0.9;}
+.primary-btn:active{transform:scale(0.98);}
+.back-btn{background:transparent;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;margin-bottom:20px;padding:0;transition:color .2s;}
+.back-btn:hover{color:var(--text);}
+
+/* MEMBER RECOGNIZED CARD */
+.member-card{background:var(--surface);border:2px solid var(--accent);border-radius:14px;padding:18px;margin-bottom:18px;}
+.member-card-top{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.member-avatar{width:46px;height:46px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:19px;color:#000;flex-shrink:0;}
+.member-info h3{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--accent);}
+.member-info p{font-size:12px;color:var(--muted);margin-top:2px;}
+.class-counter{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.counter-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+.counter-val{font-family:'Bebas Neue',sans-serif;font-size:26px;}
+.counter-val.green{color:var(--cash);}
+.counter-val.yellow{color:var(--accent);}
+.counter-val.red{color:var(--danger);}
+.counter-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.overage-warning{background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.3);border-radius:8px;padding:9px 13px;font-size:12px;color:var(--danger);margin-top:10px;display:none;}
+.overage-warning.show{display:block;}
+
+/* PLAN CARDS */
+.plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.plan-card{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer;transition:all .2s;user-select:none;}
+.plan-card:hover{border-color:var(--accent);}
+.plan-card.selected{border-color:var(--accent);background:rgba(232,255,71,0.07);}
+.plan-card .pc-price{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--accent);transition:all .2s;}
+.plan-card .pc-price.discounted{font-size:24px;color:var(--cash);}
+.plan-card .pc-orig{font-size:13px;color:var(--muted);text-decoration:line-through;height:18px;}
+.plan-card .pc-name{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px;font-weight:600;}
+.plan-card .pc-desc{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* COUPON */
+.coupon-row{display:flex;gap:8px;margin-bottom:6px;}
+.coupon-row input{flex:1;}
+.coupon-apply{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:13px 14px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.coupon-apply:hover{border-color:var(--accent);color:var(--accent);}
+.coupon-msg{font-size:12px;min-height:18px;margin-bottom:12px;}
+.coupon-msg.ok{color:var(--cash);}
+.coupon-msg.err{color:var(--danger);}
+
+/* PRICE SUMMARY */
+.price-summary{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;display:none;}
+.price-summary.show{display:block;}
+.ps-row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px;}
+.ps-row.total{color:var(--text);font-weight:600;font-size:15px;border-top:1px solid var(--border);padding-top:10px;margin-top:4px;margin-bottom:0;}
+.ps-discount{color:var(--cash);}
+
+/* SUCCESS SCREENS */
+.success-screen{display:none;text-align:center;padding:24px 0 32px;}
+.success-screen.show{display:block;}
+.success-icon{width:70px;height:70px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:30px;}
+.success-screen h2{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:3px;}
+.success-name{color:var(--accent);font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:2px;margin-top:4px;}
+.success-sub{color:var(--muted);margin-top:5px;font-size:13px;margin-bottom:18px;}
+.monthly-success-box{background:var(--surface);border:2px solid var(--cash);border-radius:14px;padding:18px;margin:16px 0;text-align:center;}
+.monthly-success-box .class-num{font-family:'Bebas Neue',sans-serif;font-size:50px;color:var(--cash);line-height:1;}
+.monthly-success-box .class-of{font-size:12px;color:var(--muted);margin-top:4px;}
+.monthly-success-box .plan-label{font-size:12px;color:var(--accent);margin-top:7px;font-weight:500;}
+
+/* QR */
+.pay-label{font-size:11px;text-transform:uppercase;letter-spacing:3px;color:var(--muted);margin-bottom:12px;}
+.qr-cards{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.qr-card{border-radius:13px;padding:15px 11px 11px;cursor:pointer;transition:transform .2s,box-shadow .2s;text-align:center;}
+.qr-card:hover{transform:translateY(-4px);box-shadow:0 10px 28px rgba(0,0,0,0.5);}
+.qr-card:active{transform:scale(0.97);}
+.qr-card.cash-card{background:#091a0b;border:2px solid var(--cash);}
+.qr-card.zelle-card{background:#120a1f;border:2px solid #7c3aed;}
+.qr-card-header{display:flex;align-items:center;justify-content:center;gap:6px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;margin-bottom:9px;}
+.cash-card .qr-card-header{color:var(--cash);}
+.zelle-card .qr-card-header{color:#a855f7;}
+.qr-box{background:#fff;border-radius:9px;padding:6px;display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:1;margin-bottom:7px;}
+.qr-box canvas,.qr-box img{width:100%!important;height:100%!important;}
+.qr-price{font-family:'Bebas Neue',sans-serif;font-size:21px;}
+.cash-card .qr-price{color:var(--cash);}
+.zelle-card .qr-price{color:#a855f7;}
+.qr-handle{font-size:11px;color:var(--muted);margin-top:2px;}
+.qr-enlarge{font-size:10px;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:1px;}
+.or-divider{text-align:center;color:var(--muted);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin:13px 0 8px;}
+.tap-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.tap-btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;border-radius:9px;border:none;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;cursor:pointer;text-decoration:none;transition:opacity .2s;}
+.tap-btn:hover{opacity:0.85;}
+.tap-btn.cash-tap{background:var(--cash);color:#000;}
+.tap-btn.zelle-tap{background:var(--zelle);color:#fff;}
+.sent-payment-btn{margin-top:16px;width:100%;max-width:380px;background:transparent;border:2px solid var(--accent2);color:var(--accent2);padding:12px 16px;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.sent-payment-btn:hover{background:rgba(71,255,184,0.08);}
+.sent-payment-btn.confirmed{background:rgba(71,255,184,0.12);cursor:default;}
+.new-checkin-btn{margin-top:12px;background:transparent;border:1px solid var(--border);color:var(--muted);padding:10px 26px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .2s;}
+.new-checkin-btn:hover{border-color:var(--text);color:var(--text);}
+
+/* MODALS */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);z-index:500;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border-radius:18px;padding:26px 22px;max-width:340px;width:92%;text-align:center;border:1px solid var(--border);animation:popIn .22s ease;}
+@keyframes popIn{from{transform:scale(0.88);opacity:0;}to{transform:scale(1);opacity:1;}}
+.modal h3{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;margin-bottom:4px;}
+.modal-sub{color:var(--muted);font-size:13px;margin-bottom:14px;}
+.modal-qr{background:#fff;border-radius:12px;padding:12px;width:192px;height:192px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;}
+.modal-qr canvas,.modal-qr img{width:100%!important;height:100%!important;}
+.modal-amount{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;}
+.modal-handle{color:var(--muted);font-size:12px;margin:3px 0 13px;}
+.modal-open-btn{display:block;padding:11px;border-radius:9px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;text-decoration:none;margin-bottom:9px;transition:opacity .2s;}
+.modal-open-btn:hover{opacity:0.85;}
+.modal-close-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px 22px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;}
+.modal-close-btn:hover{border-color:var(--text);color:var(--text);}
+.pay-picker{display:flex;flex-direction:column;gap:8px;margin:12px 0;}
+.pay-pick-btn{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.5px;cursor:pointer;transition:all .2s;text-align:left;}
+.pay-pick-btn:hover{transform:translateX(4px);}
+.pick-cash:hover{border-color:var(--cash)!important;color:var(--cash)!important;}
+.pick-cashapp:hover{border-color:var(--cash)!important;color:var(--cash)!important;}
+.pick-zelle:hover{border-color:#a855f7!important;color:#a855f7!important;}
+.pay-pick-icon{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;}
+.pick-cash .pay-pick-icon{background:rgba(0,214,50,0.15);color:var(--cash);}
+.pick-cashapp .pay-pick-icon{background:rgba(0,214,50,0.15);color:var(--cash);}
+.pick-zelle .pay-pick-icon{background:rgba(168,85,247,0.15);color:#a855f7;}
+
+/* ADMIN */
+.admin-gate{max-width:360px;margin:50px auto;text-align:center;}
+.admin-gate h2{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;margin-bottom:18px;}
+.admin-gate .primary-btn{margin-top:10px;}
+.admin-gate .ghost-btn{width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);padding:11px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;margin-top:8px;transition:all .2s;}
+.admin-gate .ghost-btn:hover{border-color:var(--accent);color:var(--accent);}
+.admin-dash{display:none;}
+.admin-dash.show{display:block;}
+.tab-row{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;flex-wrap:wrap;}
+.tab-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;}
+.tab-btn.active,.tab-btn:hover{border-color:var(--accent);color:var(--accent);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:18px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--accent);}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.admin-controls{display:flex;gap:7px;margin-bottom:13px;flex-wrap:wrap;align-items:center;}
+.admin-controls input{flex:1;min-width:140px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;}
+.admin-controls input:focus{outline:none;border-color:var(--accent);}
+.filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:8px 11px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;}
+.filter-btn.active,.filter-btn:hover{border-color:var(--accent);color:var(--accent);}
+.export-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 13px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;margin-left:auto;}
+.export-btn:hover{border-color:var(--accent);color:var(--accent);}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--surface2);padding:10px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);white-space:nowrap;}
+td{padding:11px 12px;border-top:1px solid var(--border);vertical-align:middle;}
+tr:hover td{background:var(--surface);}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500;}
+.badge::before{content:'●';font-size:7px;}
+.badge.unpaid{background:rgba(255,71,87,0.12);color:var(--danger);}
+.badge.b-pending{background:rgba(232,255,71,0.12);color:var(--accent);}
+.badge.paid-cash{background:rgba(0,214,50,0.15);color:var(--cash);}
+.badge.paid-digital{background:rgba(71,255,184,0.12);color:var(--accent2);}
+.badge.paid-zelle{background:rgba(168,85,247,0.15);color:#a855f7;}
+.badge.b-monthly{background:rgba(71,255,184,0.1);color:var(--accent2);}
+.mark-paid-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 8px;border-radius:5px;font-size:11px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.mark-paid-btn:hover{border-color:var(--cash);color:var(--cash);}
+.delete-btn{background:transparent;border:none;color:var(--border);cursor:pointer;font-size:14px;padding:3px 6px;border-radius:4px;transition:color .2s;}
+.delete-btn:hover{color:var(--danger);}
+.empty-state{text-align:center;padding:44px 20px;color:var(--muted);}
+.empty-state h3{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:7px;}
+
+/* MEMBERS */
+.member-plan-tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;}
+.tag-8{background:rgba(232,255,71,0.12);color:var(--accent);}
+.tag-12{background:rgba(71,255,184,0.12);color:var(--accent2);}
+.tag-unlimited{background:rgba(255,140,148,0.15);color:#ff8c94;}
+.progress-bar{width:100%;height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:5px;}
+.progress-fill{height:100%;border-radius:3px;}
+.progress-fill.green{background:var(--cash);}
+.progress-fill.yellow{background:var(--accent);}
+.progress-fill.red{background:var(--danger);}
+.renew-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 8px;border-radius:5px;font-size:11px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.renew-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* COUPONS */
+.coupon-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 15px;margin-bottom:9px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.coupon-code{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;color:var(--accent);}
+.coupon-meta{font-size:12px;color:var(--muted);margin-top:3px;}
+.coupon-tags{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;}
+.ctag{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;}
+.ctag.pct{background:rgba(71,255,184,0.12);color:var(--accent2);}
+.ctag.fixed{background:rgba(232,255,71,0.12);color:var(--accent);}
+.ctag.plan-drop-in{background:rgba(255,140,148,0.15);color:#ff8c94;}
+.ctag.plan-8{background:rgba(232,255,71,0.1);color:var(--accent);}
+.ctag.plan-12{background:rgba(71,255,184,0.1);color:var(--accent2);}
+.ctag.plan-unlimited{background:rgba(168,85,247,0.15);color:#a855f7;}
+.ctag.plan-all{background:rgba(255,255,255,0.06);color:var(--muted);}
+.add-coupon-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;}
+.add-coupon-box h4{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--accent);margin-bottom:13px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* SETTINGS */
+.settings-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px;}
+.settings-section h3{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;margin-bottom:13px;color:var(--accent);}
+.save-btn{background:var(--accent);color:#000;border:none;padding:10px 22px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;cursor:pointer;margin-top:6px;}
+.save-btn:hover{opacity:0.85;}
+.danger-btn{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:10px 18px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;cursor:pointer;margin-top:6px;margin-right:7px;}
+.danger-btn:hover{background:rgba(255,71,87,0.1);}
+
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--accent);color:var(--accent);padding:10px 20px;border-radius:8px;font-size:13px;transition:transform .3s;z-index:999;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+@media(max-width:600px){
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+  .form-row{grid-template-columns:1fr;}
+  .qr-cards{gap:8px;}
+  .plan-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">GYM<span>CHECK</span></div>
+  <div class="nav-btns">
+    <button class="active" onclick="showView('checkinView',this)">Sign In</button>
+    <button onclick="showView('adminView',this)">Admin</button>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════
+     CHECK-IN VIEW  (2 steps)
+══════════════════════════════════ -->
+<div id="checkinView" class="view active">
+
+  <!-- STEP 1 — Who are you? -->
+  <div id="step1" class="step active">
+    <div class="step-indicator">
+      <div class="step-dot active" id="sd1">1</div>
+      <div class="step-line" id="sl1"></div>
+      <div class="step-dot" id="sd2">2</div>
+      <div class="step-line" id="sl2"></div>
+      <div class="step-dot" id="sd3">✓</div>
+    </div>
+    <div class="page-header">
+      <h1>SIGN<br><span>IN</span></h1>
+      <p>Enter your name &amp; number</p>
+    </div>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" id="s1Name" placeholder="Your name" autocomplete="name">
+    </div>
+    <div class="form-group">
+      <label>Phone Number</label>
+      <input type="tel" id="s1Phone" placeholder="(555) 000-0000" autocomplete="tel">
+    </div>
+    <button class="primary-btn" onclick="proceedFromStep1()">CONTINUE →</button>
+  </div>
+
+  <!-- STEP 2 — Plan / Payment -->
+  <div id="step2" class="step">
+    <div class="step-indicator">
+      <div class="step-dot done" id="sd1b">✓</div>
+      <div class="step-line done" id="sl1b"></div>
+      <div class="step-dot active" id="sd2b">2</div>
+      <div class="step-line" id="sl2b"></div>
+      <div class="step-dot" id="sd3b">✓</div>
+    </div>
+    <button class="back-btn" onclick="goBack()">← Back</button>
+
+    <!-- RETURNING MONTHLY MEMBER -->
+    <div id="memberSection" style="display:none">
+      <div class="member-card">
+        <div class="member-card-top">
+          <div class="member-avatar" id="mcAvatar"></div>
+          <div class="member-info"><h3 id="mcName"></h3><p id="mcPlanLabel"></p></div>
+        </div>
+        <div class="class-counter" id="mcCounterWrap">
+          <div class="counter-box"><div class="counter-val green" id="mcUsed"></div><div class="counter-label">Used</div></div>
+          <div class="counter-box"><div class="counter-val yellow" id="mcRemaining"></div><div class="counter-label">Left</div></div>
+          <div class="counter-box"><div class="counter-val" id="mcTotal"></div><div class="counter-label">Total</div></div>
+        </div>
+        <div class="overage-warning" id="mcWarning">⚠️ All classes used — logging anyway. Admin will follow up.</div>
+      </div>
+      <button class="primary-btn" onclick="handleMonthlyCheckin()">✓ LOG THIS CLASS — NO CHARGE</button>
+    </div>
+
+    <!-- NEW MEMBER / DROP-IN -->
+    <div id="newSection" style="display:none">
+      <div class="page-header" style="margin-bottom:20px">
+        <h1 style="font-size:36px">CHOOSE<br><span>A PLAN</span></h1>
+      </div>
+      <div class="plan-grid" id="planGrid">
+        <div class="plan-card selected" data-plan="drop-in" data-base="15" onclick="selectPlan(this)">
+          <div class="pc-orig" id="porig-drop-in"></div>
+          <div class="pc-price" id="pprice-drop-in">$15</div>
+          <div class="pc-name">Drop-In</div>
+          <div class="pc-desc">Single class</div>
+        </div>
+        <div class="plan-card" data-plan="8-class" data-base="120" onclick="selectPlan(this)">
+          <div class="pc-orig" id="porig-8-class"></div>
+          <div class="pc-price" id="pprice-8-class">$120</div>
+          <div class="pc-name">8 Classes</div>
+          <div class="pc-desc">Per month</div>
+        </div>
+        <div class="plan-card" data-plan="12-class" data-base="140" onclick="selectPlan(this)">
+          <div class="pc-orig" id="porig-12-class"></div>
+          <div class="pc-price" id="pprice-12-class">$140</div>
+          <div class="pc-name">12 Classes</div>
+          <div class="pc-desc">Per month</div>
+        </div>
+        <div class="plan-card" data-plan="unlimited" data-base="150" onclick="selectPlan(this)">
+          <div class="pc-orig" id="porig-unlimited"></div>
+          <div class="pc-price" id="pprice-unlimited">$150</div>
+          <div class="pc-name">Unlimited</div>
+          <div class="pc-desc">Per month</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Coupon Code (optional)</label>
+        <div class="coupon-row">
+          <input type="text" id="couponInput" placeholder="Enter code..." style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase();clearCoupon()">
+          <button class="coupon-apply" onclick="applyCoupon()">APPLY</button>
+        </div>
+        <div class="coupon-msg" id="couponMsg"></div>
+      </div>
+
+      <div class="price-summary" id="priceSummary">
+        <div class="ps-row"><span>Original</span><span id="psOrig"></span></div>
+        <div class="ps-row"><span>Discount</span><span class="ps-discount" id="psDisc"></span></div>
+        <div class="ps-row total"><span>Total Due</span><strong id="psTotal"></strong></div>
+      </div>
+
+      <button class="primary-btn" onclick="handleNewCheckin()">CHECK IN &amp; PAY →</button>
+    </div>
+  </div>
+
+  <!-- SUCCESS: MONTHLY (no payment) -->
+  <div id="monthlySuccess" class="success-screen">
+    <div class="success-icon">💪</div>
+    <h2>CLASS LOGGED!</h2>
+    <div class="success-name" id="msName"></div>
+    <div class="success-sub" id="msSub"></div>
+    <div class="monthly-success-box">
+      <div class="class-num" id="msNum"></div>
+      <div class="class-of" id="msOf"></div>
+      <div class="plan-label" id="msPlan"></div>
+    </div>
+    <button class="new-checkin-btn" onclick="resetAll()">← Next Check-In</button>
+  </div>
+
+  <!-- SUCCESS: PAYMENT NEEDED -->
+  <div id="paySuccess" class="success-screen">
+    <div class="success-icon">✓</div>
+    <h2>YOU'RE IN!</h2>
+    <div class="success-name" id="pyName"></div>
+    <div class="success-sub" id="pySub"></div>
+    <div class="pay-label">Scan to pay</div>
+    <div class="qr-cards">
+      <div class="qr-card cash-card" onclick="openQRModal('cash')">
+        <div class="qr-card-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 7.1c-.2-.7-.8-1.1-1.5-1.1h-1.8l-.4-1.6c-.1-.5-.6-.9-1.1-.9h-4.2c-.5 0-1 .4-1.1.9L8.4 6H6.6c-.7 0-1.3.4-1.5 1.1L4 13c-.3 1.1.5 2.1 1.6 2.1h12.8c1.1 0 1.9-1 1.6-2.1L18.9 7.1zM12 14c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z"/></svg>
+          CASH APP
+        </div>
+        <div class="qr-box" id="qrCash"></div>
+        <div class="qr-price" id="qrCashAmt"></div>
+        <div class="qr-handle">$elkyfriedman</div>
+        <div class="qr-enlarge">tap to enlarge</div>
+      </div>
+      <div class="qr-card zelle-card" onclick="openQRModal('zelle')">
+        <div class="qr-card-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2L4 14h7.5L9 22l11-12h-7.5L13.5 2z"/></svg>
+          ZELLE
+        </div>
+        <div class="qr-box" id="qrZelle"></div>
+        <div class="qr-price" id="qrZelleAmt" style="color:#a855f7"></div>
+        <div class="qr-handle">7323304707</div>
+        <div class="qr-enlarge">tap to enlarge</div>
+      </div>
+    </div>
+    <div class="or-divider">— or tap to open the app —</div>
+    <div class="tap-row">
+      <a id="cashLink" href="#" class="tap-btn cash-tap" target="_blank">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 7.1c-.2-.7-.8-1.1-1.5-1.1h-1.8l-.4-1.6c-.1-.5-.6-.9-1.1-.9h-4.2c-.5 0-1 .4-1.1.9L8.4 6H6.6c-.7 0-1.3.4-1.5 1.1L4 13c-.3 1.1.5 2.1 1.6 2.1h12.8c1.1 0 1.9-1 1.6-2.1L18.9 7.1zM12 14c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z"/></svg>
+        OPEN CASH APP
+      </a>
+      <a id="zelleLink" href="#" class="tap-btn zelle-tap" target="_blank">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2L4 14h7.5L9 22l11-12h-7.5L13.5 2z"/></svg>
+        OPEN ZELLE
+      </a>
+    </div>
+    <button class="sent-payment-btn" id="sentBtn" onclick="sentPayment()">✓ &nbsp;I SENT MY PAYMENT</button>
+    <button class="new-checkin-btn" onclick="resetAll()">← Next Check-In</button>
+  </div>
+</div>
+
+<!-- QR MODAL -->
+<div class="modal-overlay" id="qrOverlay" onclick="maybeClose('qrOverlay',event)">
+  <div class="modal">
+    <h3 id="qrMTitle"></h3>
+    <div class="modal-sub">Point camera at QR to pay</div>
+    <div class="modal-qr" id="qrMBox"></div>
+    <div class="modal-amount" id="qrMAmt"></div>
+    <div class="modal-handle" id="qrMHandle"></div>
+    <a id="qrMLink" href="#" class="modal-open-btn" target="_blank"></a><br>
+    <button class="modal-close-btn" onclick="closeOverlay('qrOverlay')">Close</button>
+  </div>
+</div>
+
+<!-- PAY PICKER MODAL -->
+<div class="modal-overlay" id="payPickerOverlay" onclick="maybeClose('payPickerOverlay',event)">
+  <div class="modal">
+    <h3>HOW DID THEY PAY?</h3>
+    <div class="modal-sub" id="ppName"></div>
+    <div class="pay-picker">
+      <button class="pay-pick-btn pick-cash" onclick="confirmPaid('cash')"><div class="pay-pick-icon">💵</div>CASH</button>
+      <button class="pay-pick-btn pick-cashapp" onclick="confirmPaid('cashapp')"><div class="pay-pick-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 7.1c-.2-.7-.8-1.1-1.5-1.1h-1.8l-.4-1.6c-.1-.5-.6-.9-1.1-.9h-4.2c-.5 0-1 .4-1.1.9L8.4 6H6.6c-.7 0-1.3.4-1.5 1.1L4 13c-.3 1.1.5 2.1 1.6 2.1h12.8c1.1 0 1.9-1 1.6-2.1L18.9 7.1zM12 14c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z"/></svg></div>CASH APP</button>
+      <button class="pay-pick-btn pick-zelle" onclick="confirmPaid('zelle')"><div class="pay-pick-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2L4 14h7.5L9 22l11-12h-7.5L13.5 2z"/></svg></div>ZELLE</button>
+    </div>
+    <button class="modal-close-btn" onclick="closeOverlay('payPickerOverlay')">Cancel</button>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD MODAL -->
+<div class="modal-overlay" id="forgotOverlay" onclick="maybeClose('forgotOverlay',event)">
+  <div class="modal">
+    <h3>PASSWORD RESET</h3>
+    <div class="modal-sub" id="forgotSub">Answer your security question</div>
+    <div id="forgotQBox" style="margin-bottom:14px">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;margin-bottom:10px" id="forgotQText"></div>
+      <input type="text" id="forgotAnswer" placeholder="Your answer">
+    </div>
+    <div id="forgotNewPassBox" style="display:none;margin-bottom:14px">
+      <div class="form-group"><label>New Password</label><input type="password" id="forgotNewPass"></div>
+      <div class="form-group"><label>Confirm</label><input type="password" id="forgotConfPass"></div>
+    </div>
+    <button class="primary-btn" style="font-size:14px;padding:12px" onclick="submitForgot()">SUBMIT</button>
+    <br><button class="modal-close-btn" style="margin-top:9px" onclick="closeOverlay('forgotOverlay')">Cancel</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     ADMIN VIEW
+══════════════════════════════════ -->
+<div id="adminView" class="view">
+
+  <!-- Login gate -->
+  <div id="adminGate" class="admin-gate">
+    <h2>ADMIN ACCESS</h2>
+    <div class="form-group"><label>Password</label><input type="password" id="adminPass" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="primary-btn" style="font-size:16px;padding:13px" onclick="doLogin()">UNLOCK</button>
+    <button class="ghost-btn" onclick="openForgot()">Forgot password?</button>
+    <p style="color:var(--muted);font-size:11px;margin-top:10px">Default: <strong style="color:var(--text)">gym2024</strong></p>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="adminDash" class="admin-dash">
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="switchTab('checkins',this)">Check-Ins</button>
+      <button class="tab-btn" onclick="switchTab('members',this)">Members</button>
+      <button class="tab-btn" onclick="switchTab('coupons',this)">Coupons</button>
+      <button class="tab-btn" onclick="switchTab('settings',this)">Settings</button>
+    </div>
+
+    <!-- CHECK-INS -->
+    <div id="tab-checkins" class="tab-panel active">
+      <div class="stats-row" id="statsRow"></div>
+      <div class="admin-controls">
+        <input type="text" id="ciSearch" placeholder="Search..." oninput="renderCheckins()">
+        <button class="filter-btn active" onclick="setCIFilter('all',this)">All</button>
+        <button class="filter-btn" onclick="setCIFilter('pending',this)">Pending</button>
+        <button class="filter-btn" onclick="setCIFilter('paid',this)">Paid</button>
+        <button class="export-btn" onclick="exportCSV()">⬇ Export</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Date/Time</th><th>Name</th><th>Phone</th><th>Plan</th><th>Amt</th><th>Coupon</th><th>Status</th><th>Action</th><th></th></tr></thead>
+        <tbody id="ciTable"></tbody></table>
+        <div id="ciEmpty" class="empty-state" style="display:none"><h3>NO CHECK-INS YET</h3></div>
+      </div>
+    </div>
+
+    <!-- MEMBERS -->
+    <div id="tab-members" class="tab-panel">
+      <div class="admin-controls">
+        <input type="text" id="memSearch" placeholder="Search members..." oninput="renderMembers()">
+        <button class="filter-btn active" onclick="setMemFilter('all',this)">All</button>
+        <button class="filter-btn" onclick="setMemFilter('8-class',this)">8-Class</button>
+        <button class="filter-btn" onclick="setMemFilter('12-class',this)">12-Class</button>
+        <button class="filter-btn" onclick="setMemFilter('unlimited',this)">Unlimited</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Name</th><th>Phone</th><th>Plan</th><th>Progress</th><th>Since</th><th>Action</th><th></th></tr></thead>
+        <tbody id="memTable"></tbody></table>
+        <div id="memEmpty" class="empty-state" style="display:none"><h3>NO MONTHLY MEMBERS</h3><p>Members with monthly plans appear here</p></div>
+      </div>
+    </div>
+
+    <!-- COUPONS -->
+    <div id="tab-coupons" class="tab-panel">
+      <div class="add-coupon-box">
+        <h4>+ ADD COUPON</h4>
+        <div class="form-group"><label>Code</label><input type="text" id="cpCode" placeholder="e.g. SUMMER20" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Discount Type</label>
+            <select id="cpType">
+              <option value="pct">Percentage Off (%)</option>
+              <option value="fixed">Fixed Dollar Off ($)</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Amount</label><input type="text" id="cpAmount" placeholder="e.g. 20"></div>
+        </div>
+        <div class="form-group">
+          <label>Applies To</label>
+          <select id="cpPlan">
+            <option value="all">All Plans</option>
+            <option value="drop-in">Drop-In ($15)</option>
+            <option value="8-class">8-Class ($120)</option>
+            <option value="12-class">12-Class ($140)</option>
+            <option value="unlimited">Unlimited ($150)</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Description (optional)</label><input type="text" id="cpDesc" placeholder="e.g. Summer promo"></div>
+        <button class="save-btn" onclick="addCoupon()">ADD COUPON</button>
+      </div>
+      <div id="couponList"></div>
+      <div id="couponEmpty" class="empty-state" style="display:none"><h3>NO COUPONS YET</h3><p>Add one above</p></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="tab-settings" class="tab-panel">
+      <div class="settings-section">
+        <h3>Payment Handles</h3>
+        <div class="form-group"><label>CashApp $Cashtag</label><input type="text" id="setCashApp" placeholder="$elkyfriedman"></div>
+        <div class="form-group"><label>Zelle</label><input type="text" id="setZelle" placeholder="7323304707"></div>
+        <button class="save-btn" onclick="savePayHandles()">SAVE</button>
+      </div>
+      <div class="settings-section">
+        <h3>Change Password</h3>
+        <div class="form-group"><label>New Password</label><input type="password" id="newPass"></div>
+        <div class="form-group"><label>Confirm</label><input type="password" id="confPass"></div>
+        <button class="save-btn" onclick="changePass()">UPDATE</button>
+      </div>
+      <div class="settings-section">
+        <h3>Security Question</h3>
+        <div class="form-group"><label>Question</label><input type="text" id="secQ" placeholder="e.g. Your gym's first member name?"></div>
+        <div class="form-group"><label>Answer</label><input type="text" id="secA" placeholder="Answer (case-insensitive)"></div>
+        <button class="save-btn" onclick="saveSecQ()">SAVE</button>
+      </div>
+      <div class="settings-section" style="border-color:rgba(255,71,87,0.3)">
+        <h3 style="color:var(--danger)">Danger Zone</h3>
+        <button class="danger-btn" onclick="clearCheckins()">Delete All Check-Ins</button>
+        <button class="danger-btn" onclick="clearMembers()">Delete All Members</button>
+        <button class="danger-btn" onclick="clearCoupons()">Delete All Coupons</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONSTANTS ──
+const PLANS = {
+  'drop-in':  { label:'Drop-In',    base:15,  limit:0  },
+  '8-class':  { label:'8-Class/Mo', base:120, limit:8  },
+  '12-class': { label:'12-Class/Mo',base:140, limit:12 },
+  'unlimited':{ label:'Unlimited',  base:150, limit:999}
+};
+const DEFAULT_CFG = { cashapp:'$elkyfriedman', zelle:'7323304707', password:'gym2024', secQ:'', secA:'' };
+
+// ── STATE ──
+let currentPlan  = { plan:'drop-in', base:15, final:15 };
+let activeCoupon = null;
+let foundMember  = null;
+let lastRecordId = null;
+let qrData       = {};
+let ciFilter     = 'all';
+let memFilter    = 'all';
+let payPickerTarget = null;
+let forgotStage  = 'question'; // 'question' | 'newpass'
+
+// ── STORAGE ──
+const g  = k => JSON.parse(localStorage.getItem(k)||'[]');
+const gs = k => JSON.parse(localStorage.getItem(k)||'null');
+const s  = (k,v) => localStorage.setItem(k,JSON.stringify(v));
+const getRecords  = ()  => g('gymRecords');
+const getMembers  = ()  => g('gymMembers');
+const getCoupons  = ()  => g('gymCoupons');
+const getConfig   = ()  => gs('gymConfig')||DEFAULT_CFG;
+const saveRecords = r   => s('gymRecords',r);
+const saveMembers = m   => s('gymMembers',m);
+const saveCoupons = c   => s('gymCoupons',c);
+const saveConfig  = c   => s('gymConfig',c);
+
+// ── NAV ──
+function showView(id,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(id==='adminView') renderStats();
+}
+
+// ── STEP 1 → 2 ──
+function proceedFromStep1(){
+  const name  = document.getElementById('s1Name').value.trim();
+  const phone = document.getElementById('s1Phone').value.trim();
+  if(!name)  { showToast('Please enter your name'); return; }
+  if(!phone) { showToast('Please enter your phone number'); return; }
+
+  // Look up existing monthly member
+  const members = getMembers();
+  const match = members.find(m =>
+    m.name.toLowerCase()===name.toLowerCase() &&
+    m.phone.replace(/\D/g,'').slice(-7)===phone.replace(/\D/g,'').slice(-7)
+  );
+
+  document.getElementById('step1').classList.remove('active');
+  document.getElementById('step2').classList.add('active');
+
+  if(match){
+    foundMember = match;
+    showMemberSection(match);
+  } else {
+    foundMember = null;
+    document.getElementById('memberSection').style.display='none';
+    document.getElementById('newSection').style.display='block';
+    resetPlanUI();
+  }
+}
+
+function goBack(){
+  document.getElementById('step2').classList.remove('active');
+  document.getElementById('step1').classList.add('active');
+  foundMember=null; activeCoupon=null;
+  document.getElementById('couponMsg').textContent='';
+  document.getElementById('priceSummary').classList.remove('show');
+}
+
+function showMemberSection(m){
+  document.getElementById('memberSection').style.display='block';
+  document.getElementById('newSection').style.display='none';
+  const limit   = PLANS[m.plan].limit;
+  const used    = m.classesUsed||0;
+  const rem     = limit===999 ? '∞' : Math.max(0,limit-used);
+  const over    = limit!==999 && used>=limit;
+  document.getElementById('mcAvatar').textContent    = m.name.charAt(0).toUpperCase();
+  document.getElementById('mcName').textContent      = m.name.toUpperCase();
+  document.getElementById('mcPlanLabel').textContent = PLANS[m.plan].label;
+  document.getElementById('mcUsed').textContent      = used;
+  document.getElementById('mcRemaining').textContent = rem;
+  document.getElementById('mcTotal').textContent     = limit===999?'∞':limit;
+  const remEl = document.getElementById('mcRemaining');
+  if(limit===999){ remEl.className='counter-val green'; }
+  else { remEl.className='counter-val '+(parseInt(rem)>3?'green':parseInt(rem)>0?'yellow':'red'); }
+  document.getElementById('mcWarning').classList.toggle('show',over);
+  // hide counter for unlimited
+  document.getElementById('mcCounterWrap').style.display = limit===999?'none':'grid';
+}
+
+// ── MONTHLY CHECK-IN ──
+function handleMonthlyCheckin(){
+  const m    = foundMember;
+  const used = (m.classesUsed||0)+1;
+  const members = getMembers();
+  const mi   = members.findIndex(x=>x.id===m.id);
+  if(mi!==-1){ members[mi].classesUsed=used; saveMembers(members); }
+
+  const record = {
+    id:Date.now(), timestamp:new Date().toISOString(),
+    name:m.name, phone:m.phone,
+    plan:PLANS[m.plan].label, amount:0,
+    status:'monthly', classNum:used,
+    classTotal:PLANS[m.plan].limit, memberId:m.id
+  };
+  const recs = getRecords(); recs.unshift(record); saveRecords(recs);
+  lastRecordId = record.id;
+
+  const limit = PLANS[m.plan].limit;
+  document.getElementById('msName').textContent = m.name.toUpperCase();
+  document.getElementById('msSub').textContent  = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('msNum').textContent  = limit===999?'CLASS '+used:`CLASS ${used}`;
+  document.getElementById('msOf').textContent   = limit===999?'Unlimited plan — no limit!':'of '+limit+' this month';
+  document.getElementById('msPlan').textContent = PLANS[m.plan].label;
+
+  document.getElementById('step2').classList.remove('active');
+  document.getElementById('monthlySuccess').classList.add('show');
+}
+
+// ── PLAN SELECT ──
+function selectPlan(el){
+  document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  currentPlan.plan = el.dataset.plan;
+  currentPlan.base = parseInt(el.dataset.base);
+  // Re-apply coupon if active
+  if(activeCoupon) applyDiscountUI();
+  else { currentPlan.final=currentPlan.base; document.getElementById('priceSummary').classList.remove('show'); }
+}
+
+function resetPlanUI(){
+  document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
+  document.querySelector('[data-plan="drop-in"]').classList.add('selected');
+  currentPlan={plan:'drop-in',base:15,final:15};
+  activeCoupon=null;
+  document.getElementById('couponInput').value='';
+  document.getElementById('couponMsg').textContent='';
+  document.getElementById('priceSummary').classList.remove('show');
+  // reset all price displays
+  Object.keys(PLANS).forEach(p=>{
+    const el=document.getElementById('pprice-'+p);
+    const orig=document.getElementById('porig-'+p);
+    if(el){el.className='pc-price';el.textContent='$'+PLANS[p].base;}
+    if(orig) orig.textContent='';
+  });
+}
+
+// ── COUPON ──
+function clearCoupon(){
+  if(activeCoupon){
+    activeCoupon=null;
+    currentPlan.final=currentPlan.base;
+    document.getElementById('priceSummary').classList.remove('show');
+    resetPriceDisplays();
+  }
+  document.getElementById('couponMsg').textContent='';
+}
+
+function applyCoupon(){
+  const code  = document.getElementById('couponInput').value.trim().toUpperCase();
+  const msgEl = document.getElementById('couponMsg');
+  if(!code){ msgEl.className='coupon-msg err'; msgEl.textContent='Enter a code first.'; return; }
+
+  const coupons = getCoupons();
+  const coupon  = coupons.find(c=>c.code===code);
+  if(!coupon){ msgEl.className='coupon-msg err'; msgEl.textContent='Invalid code. Try again.'; return; }
+
+  // Check plan applicability
+  if(coupon.plan!=='all' && coupon.plan!==currentPlan.plan){
+    const planName = PLANS[coupon.plan]?.label||coupon.plan;
+    msgEl.className='coupon-msg err';
+    msgEl.textContent=`That code only applies to the ${planName} plan.`;
+    return;
+  }
+
+  activeCoupon = coupon;
+  applyDiscountUI();
+  msgEl.className='coupon-msg ok';
+  msgEl.textContent=coupon.type==='pct'?`✓ ${coupon.amount}% off applied!`:`✓ $${coupon.amount} off applied!`;
+}
+
+function applyDiscountUI(){
+  const base  = currentPlan.base;
+  let disc    = activeCoupon.type==='pct'
+    ? Math.round(base * activeCoupon.amount / 100)
+    : Math.min(activeCoupon.amount, base);
+  const final = Math.max(0, base-disc);
+  currentPlan.final = final;
+
+  // Update plan card display
+  Object.keys(PLANS).forEach(p=>{
+    const priceEl = document.getElementById('pprice-'+p);
+    const origEl  = document.getElementById('porig-'+p);
+    if(!priceEl||!origEl) return;
+    const pBase = PLANS[p].base;
+    const canApply = activeCoupon.plan==='all'||activeCoupon.plan===p;
+    if(canApply){
+      const d = activeCoupon.type==='pct'?Math.round(pBase*activeCoupon.amount/100):Math.min(activeCoupon.amount,pBase);
+      const f = Math.max(0,pBase-d);
+      origEl.textContent  = '$'+pBase;
+      priceEl.className   = 'pc-price discounted';
+      priceEl.textContent = '$'+f;
+    } else {
+      origEl.textContent='';
+      priceEl.className='pc-price';
+      priceEl.textContent='$'+pBase;
+    }
+  });
+
+  // Show summary
+  document.getElementById('psOrig').textContent = '$'+base;
+  document.getElementById('psDisc').textContent = activeCoupon.type==='pct'?`-${activeCoupon.amount}% (-$${disc})`:`-$${disc}`;
+  document.getElementById('psTotal').textContent = '$'+final;
+  document.getElementById('priceSummary').classList.add('show');
+}
+
+function resetPriceDisplays(){
+  Object.keys(PLANS).forEach(p=>{
+    const el=document.getElementById('pprice-'+p);
+    const orig=document.getElementById('porig-'+p);
+    if(el){el.className='pc-price';el.textContent='$'+PLANS[p].base;}
+    if(orig) orig.textContent='';
+  });
+}
+
+// ── NEW CHECK-IN ──
+function handleNewCheckin(){
+  const name  = document.getElementById('s1Name').value.trim();
+  const phone = document.getElementById('s1Phone').value.trim();
+  const plan  = currentPlan.plan;
+  const amt   = currentPlan.final;
+  const base  = currentPlan.base;
+  const cfg   = getConfig();
+
+  // Register monthly member
+  if(plan!=='drop-in'){
+    const existing = getMembers().find(m=>
+      m.name.toLowerCase()===name.toLowerCase()&&
+      m.phone.replace(/\D/g,'').slice(-7)===phone.replace(/\D/g,'').slice(-7)
+    );
+    if(!existing){
+      const mems = getMembers();
+      mems.push({ id:Date.now(), name, phone, plan, classesUsed:1, since:new Date().toISOString() });
+      saveMembers(mems);
+    }
+  }
+
+  const record = {
+    id:Date.now()+1, timestamp:new Date().toISOString(),
+    name, phone, plan:PLANS[plan].label,
+    amount:amt, originalAmount:base,
+    couponUsed:activeCoupon?activeCoupon.code:null,
+    status:'pending',
+    classNum:plan!=='drop-in'?1:null
+  };
+  const recs = getRecords(); recs.unshift(record); saveRecords(recs);
+  lastRecordId = record.id;
+
+  // Build payment URLs
+  const tag      = cfg.cashapp.replace('$','');
+  const cashUrl  = `https://cash.app/$${tag}/${amt}`;
+  const zelleUrl = `https://enroll.zellepay.com/qr-codes?data=${encodeURIComponent(JSON.stringify({alias:cfg.zelle,amount:amt}))}`;
+  qrData = { cashUrl, zelleUrl, amount:amt, cashHandle:cfg.cashapp, zelleHandle:cfg.zelle };
+
+  document.getElementById('pyName').textContent = name.toUpperCase();
+  document.getElementById('pySub').textContent  = `${PLANS[plan].label}${activeCoupon?' · Coupon: '+activeCoupon.code:''} · $${amt}`;
+  document.getElementById('qrCashAmt').textContent  = '$'+amt;
+  document.getElementById('qrZelleAmt').textContent = '$'+amt;
+  document.getElementById('cashLink').href  = cashUrl;
+  document.getElementById('zelleLink').href = zelleUrl;
+
+  setTimeout(()=>{ makeQR('qrCash',cashUrl,128); makeQR('qrZelle',zelleUrl,128); },80);
+
+  document.getElementById('step2').classList.remove('active');
+  document.getElementById('paySuccess').classList.add('show');
+}
+
+function sentPayment(){
+  const btn=document.getElementById('sentBtn');
+  btn.classList.add('confirmed'); btn.disabled=true;
+  btn.innerHTML='✓ &nbsp;PAYMENT SENT — ADMIN WILL CONFIRM';
+  showToast('Got it! Admin will verify ✓');
+}
+
+function resetAll(){
+  // Reset steps
+  document.getElementById('step2').classList.remove('active');
+  document.getElementById('monthlySuccess').classList.remove('show');
+  document.getElementById('paySuccess').classList.remove('show');
+  document.getElementById('step1').classList.add('active');
+  document.getElementById('s1Name').value='';
+  document.getElementById('s1Phone').value='';
+  resetPlanUI();
+  foundMember=null; lastRecordId=null; activeCoupon=null;
+  const btn=document.getElementById('sentBtn');
+  if(btn){btn.classList.remove('confirmed');btn.disabled=false;btn.innerHTML='✓ &nbsp;I SENT MY PAYMENT';}
+}
+
+// ── QR ──
+function makeQR(elId,url,size){
+  const el=document.getElementById(elId); if(!el) return;
+  el.innerHTML='';
+  new QRCode(el,{text:url,width:size,height:size,correctLevel:QRCode.CorrectLevel.M});
+}
+function openQRModal(type){
+  document.getElementById('qrMBox').innerHTML='';
+  if(type==='cash'){
+    document.getElementById('qrMTitle').textContent='PAY WITH CASH APP';
+    document.getElementById('qrMTitle').style.color='var(--cash)';
+    document.getElementById('qrMAmt').textContent='$'+qrData.amount;
+    document.getElementById('qrMAmt').style.color='var(--cash)';
+    document.getElementById('qrMHandle').textContent=qrData.cashHandle;
+    const l=document.getElementById('qrMLink');
+    l.textContent='OPEN CASH APP';l.href=qrData.cashUrl;l.style.background='var(--cash)';l.style.color='#000';
+    setTimeout(()=>makeQR('qrMBox',qrData.cashUrl,168),40);
+  } else {
+    document.getElementById('qrMTitle').textContent='PAY WITH ZELLE';
+    document.getElementById('qrMTitle').style.color='#a855f7';
+    document.getElementById('qrMAmt').textContent='$'+qrData.amount;
+    document.getElementById('qrMAmt').style.color='#a855f7';
+    document.getElementById('qrMHandle').textContent=qrData.zelleHandle;
+    const l=document.getElementById('qrMLink');
+    l.textContent='OPEN ZELLE';l.href=qrData.zelleUrl;l.style.background='var(--zelle)';l.style.color='#fff';
+    setTimeout(()=>makeQR('qrMBox',qrData.zelleUrl,168),40);
+  }
+  document.getElementById('qrOverlay').classList.add('open');
+}
+
+// ── MODALS ──
+function maybeClose(id,e){ if(e.target===document.getElementById(id)) closeOverlay(id); }
+function closeOverlay(id){ document.getElementById(id).classList.remove('open'); }
+
+// ── ADMIN LOGIN ──
+function doLogin(){
+  const pass=document.getElementById('adminPass').value;
+  if(pass===getConfig().password){
+    document.getElementById('adminGate').style.display='none';
+    document.getElementById('adminDash').classList.add('show');
+    renderStats(); renderCheckins(); renderMembers(); renderCoupons(); loadSettings();
+  } else showToast('Incorrect password');
+}
+
+// ── FORGOT PASSWORD ──
+function openForgot(){
+  const cfg=getConfig();
+  if(!cfg.secQ){ showToast('No security question set. Contact admin.'); return; }
+  forgotStage='question';
+  document.getElementById('forgotQText').textContent=cfg.secQ;
+  document.getElementById('forgotAnswer').value='';
+  document.getElementById('forgotQBox').style.display='block';
+  document.getElementById('forgotNewPassBox').style.display='none';
+  document.getElementById('forgotSub').textContent='Answer your security question';
+  document.getElementById('forgotOverlay').classList.add('open');
+}
+function submitForgot(){
+  const cfg=getConfig();
+  if(forgotStage==='question'){
+    const ans=document.getElementById('forgotAnswer').value.trim().toLowerCase();
+    if(ans===cfg.secA.toLowerCase()){
+      forgotStage='newpass';
+      document.getElementById('forgotQBox').style.display='none';
+      document.getElementById('forgotNewPassBox').style.display='block';
+      document.getElementById('forgotSub').textContent='Set your new password';
+    } else { showToast('Incorrect answer'); }
+  } else {
+    const np=document.getElementById('forgotNewPass').value;
+    const cp=document.getElementById('forgotConfPass').value;
+    if(!np){ showToast('Enter a password'); return; }
+    if(np!==cp){ showToast('Passwords do not match'); return; }
+    cfg.password=np; saveConfig(cfg);
+    closeOverlay('forgotOverlay');
+    showToast('Password updated! Please log in.');
+  }
+}
+
+// ── TABS ──
+function switchTab(tab,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  btn.classList.add('active');
+  if(tab==='checkins'){ renderStats(); renderCheckins(); }
+  if(tab==='members')  renderMembers();
+  if(tab==='coupons')  renderCoupons();
+  if(tab==='settings') loadSettings();
+}
+
+// ── STATS ──
+function renderStats(){
+  const r=getRecords();
+  const paid=r.filter(x=>x.status!=='pending'&&x.status!=='unpaid');
+  const pend=r.filter(x=>x.status==='pending');
+  const rev=paid.filter(x=>x.status!=='monthly').reduce((s,x)=>s+(x.amount||0),0);
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat-card"><div class="stat-val">${r.length}</div><div class="stat-label">Check-Ins</div></div>
+    <div class="stat-card"><div class="stat-val">${paid.length}</div><div class="stat-label">Confirmed</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--accent)">${pend.length}</div><div class="stat-label">Pending ⏳</div></div>
+    <div class="stat-card"><div class="stat-val">$${rev}</div><div class="stat-label">Revenue</div></div>`;
+}
+
+// ── CHECK-INS TABLE ──
+function setCIFilter(f,btn){
+  ciFilter=f;
+  document.querySelectorAll('#tab-checkins .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderCheckins();
+}
+function renderCheckins(){
+  const recs=getRecords();
+  const q=(document.getElementById('ciSearch')?.value||'').toLowerCase();
+  const rows=recs.filter(r=>{
+    const ms=r.name.toLowerCase().includes(q)||r.phone.includes(q);
+    const mf=ciFilter==='all'
+      ||(ciFilter==='pending'&&(r.status==='pending'||r.status==='unpaid'))
+      ||(ciFilter==='paid'&&r.status!=='pending'&&r.status!=='unpaid');
+    return ms&&mf;
+  });
+  const tb=document.getElementById('ciTable');
+  const em=document.getElementById('ciEmpty');
+  if(!rows.length){tb.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  tb.innerHTML=rows.map(r=>{
+    const d=new Date(r.timestamp);
+    const ds=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});
+    const ts=d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    const badge=
+      r.status==='pending'?'<span class="badge b-pending">Pending ⏳</span>':
+      r.status==='monthly'?'<span class="badge b-monthly">Monthly ✓</span>':
+      r.status==='cash'?'<span class="badge paid-cash">💵 Cash</span>':
+      r.status==='cashapp'?'<span class="badge paid-digital">CashApp ✓</span>':
+      r.status==='zelle'?'<span class="badge paid-zelle">Zelle ✓</span>':
+      '<span class="badge paid-digital">Paid ✓</span>';
+    const needsAction=r.status==='pending'||r.status==='unpaid';
+    const action=needsAction
+      ?`<button class="mark-paid-btn" onclick="openPayPicker(${r.id},'${r.name.replace(/'/g,"\\'")}')">Mark Paid ▾</button>`
+      :'<span style="color:var(--muted);font-size:11px">✓</span>';
+    const amtDisp=r.amount===0?'<span style="color:var(--muted)">—</span>':`<span style="color:var(--accent);font-family:\'Bebas Neue\',sans-serif;font-size:16px">$${r.amount}</span>`;
+    const couponDisp=r.couponUsed?`<span style="color:var(--cash);font-size:11px">${r.couponUsed}</span>`:'<span style="color:var(--muted);font-size:11px">—</span>';
+    return `<tr>
+      <td style="color:var(--muted);font-size:11px">${ds}<br>${ts}</td>
+      <td><strong>${r.name}</strong></td>
+      <td style="color:var(--muted);font-size:11px">${r.phone}</td>
+      <td style="font-size:11px">${r.plan}</td>
+      <td>${amtDisp}</td>
+      <td>${couponDisp}</td>
+      <td>${badge}</td>
+      <td>${action}</td>
+      <td><button class="delete-btn" onclick="deleteRecord(${r.id})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── PAY PICKER ──
+function openPayPicker(id,name){
+  payPickerTarget=id;
+  document.getElementById('ppName').textContent='Logging payment for '+name;
+  document.getElementById('payPickerOverlay').classList.add('open');
+}
+function confirmPaid(method){
+  if(!payPickerTarget) return;
+  const recs=getRecords();
+  const i=recs.findIndex(r=>r.id===payPickerTarget);
+  if(i!==-1){recs[i].status=method;saveRecords(recs);renderStats();renderCheckins();}
+  closeOverlay('payPickerOverlay'); payPickerTarget=null;
+  const labels={cash:'Cash',cashapp:'Cash App',zelle:'Zelle'};
+  showToast('Paid via '+labels[method]+' ✓');
+}
+function deleteRecord(id){
+  if(!confirm('Delete this record?')) return;
+  saveRecords(getRecords().filter(r=>r.id!==id));
+  renderStats(); renderCheckins(); showToast('Deleted');
+}
+function exportCSV(){
+  const r=getRecords();
+  if(!r.length){showToast('No records');return;}
+  const rows=[['Date','Time','Name','Phone','Plan','Amount','Coupon','Status','Class#']];
+  r.forEach(x=>{const d=new Date(x.timestamp);rows.push([d.toLocaleDateString(),d.toLocaleTimeString(),x.name,x.phone,x.plan,'$'+(x.amount||0),x.couponUsed||'',x.status,x.classNum||'']);});
+  const csv=rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`checkins-${new Date().toISOString().slice(0,10)}.csv`;a.click();showToast('Exported!');
+}
+
+// ── MEMBERS ──
+function setMemFilter(f,btn){
+  memFilter=f;
+  document.querySelectorAll('#tab-members .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderMembers();
+}
+function renderMembers(){
+  const mems=getMembers();
+  const q=(document.getElementById('memSearch')?.value||'').toLowerCase();
+  const rows=mems.filter(m=>{
+    const ms=m.name.toLowerCase().includes(q)||m.phone.includes(q);
+    const mf=memFilter==='all'||m.plan===memFilter;
+    return ms&&mf;
+  });
+  const tb=document.getElementById('memTable');
+  const em=document.getElementById('memEmpty');
+  if(!rows.length){tb.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  tb.innerHTML=rows.map(m=>{
+    const limit=PLANS[m.plan].limit;
+    const used=m.classesUsed||0;
+    const isUnlim=limit===999;
+    const pct=isUnlim?Math.min(100,Math.round(used/30*100)):Math.min(100,Math.round(used/limit*100));
+    const fc=pct<60?'green':pct<90?'yellow':'red';
+    const tag=m.plan==='8-class'?'<span class="member-plan-tag tag-8">8-Class</span>':
+               m.plan==='12-class'?'<span class="member-plan-tag tag-12">12-Class</span>':
+               '<span class="member-plan-tag tag-unlimited">Unlimited</span>';
+    const since=new Date(m.since).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const progText=isUnlim?used+' classes':used+'/'+limit;
+    return `<tr>
+      <td><strong>${m.name}</strong></td>
+      <td style="color:var(--muted);font-size:11px">${m.phone}</td>
+      <td>${tag}</td>
+      <td style="min-width:110px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${progText}</div>
+        <div class="progress-bar"><div class="progress-fill ${fc}" style="width:${pct}%"></div></div>
+      </td>
+      <td style="color:var(--muted);font-size:11px">${since}</td>
+      <td><button class="renew-btn" onclick="renewMember(${m.id})">↺ Renew</button></td>
+      <td><button class="delete-btn" onclick="deleteMember(${m.id})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+function renewMember(id){
+  if(!confirm('Reset class count to 0 for new month?')) return;
+  const mems=getMembers();
+  const i=mems.findIndex(m=>m.id===id);
+  if(i!==-1){mems[i].classesUsed=0;mems[i].since=new Date().toISOString();saveMembers(mems);}
+  renderMembers(); showToast('Member renewed ✓');
+}
+function deleteMember(id){
+  if(!confirm('Remove this member?')) return;
+  saveMembers(getMembers().filter(m=>m.id!==id));
+  renderMembers(); showToast('Member removed');
+}
+
+// ── COUPONS ──
+function addCoupon(){
+  const code=document.getElementById('cpCode').value.trim().toUpperCase();
+  const type=document.getElementById('cpType').value;
+  const amt =parseFloat(document.getElementById('cpAmount').value);
+  const plan=document.getElementById('cpPlan').value;
+  const desc=document.getElementById('cpDesc').value.trim();
+  if(!code){showToast('Enter a code');return;}
+  if(!amt||isNaN(amt)||amt<=0){showToast('Enter a valid amount');return;}
+  if(type==='pct'&&amt>100){showToast('Percentage cannot exceed 100');return;}
+  const coupons=getCoupons();
+  if(coupons.find(c=>c.code===code)){showToast('Code already exists');return;}
+  coupons.push({id:Date.now(),code,type,amount:amt,plan,desc});
+  saveCoupons(coupons);
+  document.getElementById('cpCode').value='';
+  document.getElementById('cpAmount').value='';
+  document.getElementById('cpDesc').value='';
+  renderCoupons(); showToast('Coupon added ✓');
+}
+function deleteCoupon(id){
+  saveCoupons(getCoupons().filter(c=>c.id!==id));
+  renderCoupons(); showToast('Coupon deleted');
+}
+function renderCoupons(){
+  const coupons=getCoupons();
+  const list=document.getElementById('couponList');
+  const em=document.getElementById('couponEmpty');
+  if(!coupons.length){list.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  list.innerHTML=coupons.map(c=>{
+    const discStr=c.type==='pct'?c.amount+'% off':'$'+c.amount+' off';
+    const planStr=c.plan==='all'?'All Plans':PLANS[c.plan]?.label||c.plan;
+    const typeTag=`<span class="ctag ${c.type==='pct'?'pct':'fixed'}">${discStr}</span>`;
+    const planTag=`<span class="ctag plan-${c.plan}">${planStr}</span>`;
+    return `<div class="coupon-card">
+      <div class="coupon-info">
+        <div class="coupon-code">${c.code}</div>
+        <div class="coupon-meta">${c.desc||'No description'}</div>
+        <div class="coupon-tags">${typeTag}${planTag}</div>
+      </div>
+      <button class="delete-btn" style="font-size:16px" onclick="deleteCoupon(${c.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ── SETTINGS ──
+function loadSettings(){
+  const c=getConfig();
+  document.getElementById('setCashApp').value=c.cashapp||'';
+  document.getElementById('setZelle').value=c.zelle||'';
+  document.getElementById('secQ').value=c.secQ||'';
+  document.getElementById('secA').value=c.secA||'';
+}
+function savePayHandles(){
+  const c=getConfig();
+  c.cashapp=document.getElementById('setCashApp').value.trim()||c.cashapp;
+  c.zelle=document.getElementById('setZelle').value.trim()||c.zelle;
+  saveConfig(c); showToast('Saved ✓');
+}
+function changePass(){
+  const np=document.getElementById('newPass').value;
+  const cp=document.getElementById('confPass').value;
+  if(!np){showToast('Enter a password');return;}
+  if(np!==cp){showToast('Passwords do not match');return;}
+  const c=getConfig(); c.password=np; saveConfig(c);
+  document.getElementById('newPass').value='';
+  document.getElementById('confPass').value='';
+  showToast('Password updated ✓');
+}
+function saveSecQ(){
+  const q=document.getElementById('secQ').value.trim();
+  const a=document.getElementById('secA').value.trim();
+  if(!q||!a){showToast('Enter both question and answer');return;}
+  const c=getConfig(); c.secQ=q; c.secA=a; saveConfig(c);
+  showToast('Security question saved ✓');
+}
+function clearCheckins(){if(!confirm('Delete ALL check-in records?'))return;if(!confirm('Sure?'))return;localStorage.removeItem('gymRecords');renderStats();renderCheckins();showToast('Records cleared');}
+function clearMembers(){if(!confirm('Delete ALL members?'))return;localStorage.removeItem('gymMembers');renderMembers();showToast('Members cleared');}
+function clearCoupons(){if(!confirm('Delete ALL coupons?'))return;localStorage.removeItem('gymCoupons');renderCoupons();showToast('Coupons cleared');}
+
+// ── TOAST ──
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+
+// Init
+if(!localStorage.getItem('gymConfig')) saveConfig(DEFAULT_CFG);
+</script>
+</body>
+</html>
