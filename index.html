@@ -750,8 +750,17 @@ function showView(id,btn){
   if(id==='adminView') renderStats();
 }
 
+// ── HELPERS ──
+function isNewMonth(member){
+  if(!member.since) return false;
+  const lastReset = new Date(member.lastReset || member.since);
+  const now = new Date();
+  return now.getFullYear() > lastReset.getFullYear() ||
+    now.getMonth() > lastReset.getMonth();
+}
+
 // ── STEP 1 → 2 ──
-function proceedFromStep1(){
+async function proceedFromStep1(){
   const name  = document.getElementById('s1Name').value.trim();
   const phone = document.getElementById('s1Phone').value.trim();
   if(!name)  { showToast('Please enter your name'); return; }
@@ -767,9 +776,32 @@ function proceedFromStep1(){
   document.getElementById('step1').classList.remove('active');
   document.getElementById('step2').classList.add('active');
 
-  if(match){
+  if(match && !isNewMonth(match)){
+    // Returning member — same month, no payment needed
     foundMember = match;
     showMemberSection(match);
+  } else if(match && isNewMonth(match)){
+    // New month — reset their count, treat like new payment
+    const mems = getMembers();
+    const mi = mems.findIndex(x=>x.id===match.id);
+    if(mi!==-1){
+      mems[mi].classesUsed = 0;
+      mems[mi].lastReset   = new Date().toISOString();
+      await saveMemberObj(mems[mi]);
+    }
+    // Pre-select their previous plan but send to payment
+    foundMember = null;
+    document.getElementById('memberSection').style.display='none';
+    document.getElementById('newSection').style.display='block';
+    resetPlanUI();
+    // Pre-select their last plan
+    const lastPlan = document.querySelector(`[data-plan="${match.plan}"]`);
+    if(lastPlan){
+      document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
+      lastPlan.classList.add('selected');
+      currentPlan = { plan:match.plan, base:PLANS[match.plan].base, final:PLANS[match.plan].base };
+    }
+    showToast(`Welcome back ${match.name.split(' ')[0]}! New month — please renew your plan.`);
   } else {
     foundMember = null;
     document.getElementById('memberSection').style.display='none';
@@ -958,8 +990,18 @@ async function handleNewCheckin(){
       m.phone.replace(/\D/g,'').slice(-7)===phone.replace(/\D/g,'').slice(-7)
     );
     if(!existing){
-      const newMem = { id:Date.now(), name, phone, plan, classesUsed:1, since:new Date().toISOString() };
+      const newMem = { id:Date.now(), name, phone, plan, classesUsed:1, since:new Date().toISOString(), lastReset:new Date().toISOString() };
       await saveMemberObj(newMem);
+    } else {
+      // Existing member re-paying for new month — update their plan and reset
+      const mems = getMembers();
+      const mi = mems.findIndex(x=>x.id===existing.id);
+      if(mi!==-1){
+        mems[mi].plan        = plan;
+        mems[mi].classesUsed = 1;
+        mems[mi].lastReset   = new Date().toISOString();
+        await saveMemberObj(mems[mi]);
+      }
     }
   }
 
@@ -1248,7 +1290,7 @@ function renderMembers(){
 async function renewMember(id){
   if(!confirm('Reset class count to 0 for new month?')) return;
   const m=getMembers().find(m=>m.id===id);
-  if(m){ m.classesUsed=0; m.since=new Date().toISOString(); await saveMemberObj(m); }
+  if(m){ m.classesUsed=0; m.since=new Date().toISOString(); m.lastReset=new Date().toISOString(); await saveMemberObj(m); }
   showToast('Member renewed ✓');
 }
 async function deleteMember(id){
