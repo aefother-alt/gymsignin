@@ -6,6 +6,28 @@
 <title>GymCheck — Class Sign-In</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyALUzjUdckOpyDxhZ-0Yq5JYl1S-qwt4lU",
+  authDomain: "gymcheck-d104c.firebaseapp.com",
+  projectId: "gymcheck-d104c",
+  storageBucket: "gymcheck-d104c.firebasestorage.app",
+  messagingSenderId: "1072075538501",
+  appId: "1:1072075538501:web:9a65a3d7984c77f103e32c",
+  measurementId: "G-6HE07KT12Q"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+window._db = db;
+window._fb = { collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, query, orderBy };
+window._fbReady = true;
+window.dispatchEvent(new Event('fbready'));
+</script>
 <style>
 :root{--bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;--border:#2a2a2a;--accent:#e8ff47;--accent2:#47ffb8;--danger:#ff4757;--text:#f0f0f0;--muted:#666;--cash:#00d632;--zelle:#6d1ed4;}
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -614,20 +636,72 @@ let qrData       = {};
 let ciFilter     = 'all';
 let memFilter    = 'all';
 let payPickerTarget = null;
-let forgotStage  = 'question'; // 'question' | 'newpass'
+let forgotStage  = 'question';
 
-// ── STORAGE ──
-const g  = k => JSON.parse(localStorage.getItem(k)||'[]');
-const gs = k => JSON.parse(localStorage.getItem(k)||'null');
-const s  = (k,v) => localStorage.setItem(k,JSON.stringify(v));
-const getRecords  = ()  => g('gymRecords');
-const getMembers  = ()  => g('gymMembers');
-const getCoupons  = ()  => g('gymCoupons');
-const getConfig   = ()  => gs('gymConfig')||DEFAULT_CFG;
-const saveRecords = r   => s('gymRecords',r);
-const saveMembers = m   => s('gymMembers',m);
-const saveCoupons = c   => s('gymCoupons',c);
-const saveConfig  = c   => s('gymConfig',c);
+// ── LOCAL CACHE (kept in sync by Firebase listeners) ──
+let _records = [];
+let _members = [];
+let _coupons = [];
+let _config  = null;
+
+// ── FIREBASE HELPERS ──
+function db(){ return window._db; }
+function fb(){ return window._fb; }
+
+async function fbSet(col, id, data){
+  try { await fb().setDoc(fb().doc(db(), col, String(id)), data); } catch(e){ console.error(e); }
+}
+async function fbDel(col, id){
+  try { await fb().deleteDoc(fb().doc(db(), col, String(id))); } catch(e){ console.error(e); }
+}
+async function fbGetAll(col){
+  try {
+    const snap = await fb().getDocs(fb().collection(db(), col));
+    return snap.docs.map(d => d.data());
+  } catch(e){ console.error(e); return []; }
+}
+
+// ── INIT LISTENERS (real-time sync) ──
+function initListeners(){
+  // Records
+  fb().onSnapshot(fb().collection(db(),'records'), snap => {
+    _records = snap.docs.map(d=>d.data()).sort((a,b)=>b.id-a.id);
+    if(document.getElementById('adminDash').classList.contains('show')){
+      renderStats(); renderCheckins();
+    }
+  });
+  // Members
+  fb().onSnapshot(fb().collection(db(),'members'), snap => {
+    _members = snap.docs.map(d=>d.data());
+    if(document.getElementById('adminDash').classList.contains('show')) renderMembers();
+  });
+  // Coupons
+  fb().onSnapshot(fb().collection(db(),'coupons'), snap => {
+    _coupons = snap.docs.map(d=>d.data());
+    if(document.getElementById('adminDash').classList.contains('show')) renderCoupons();
+  });
+  // Config
+  fb().onSnapshot(fb().doc(db(),'config','main'), snap => {
+    if(snap.exists()) _config = snap.data();
+  });
+}
+
+// ── STORAGE (now Firebase-backed) ──
+function getRecords(){ return _records; }
+function getMembers(){ return _members; }
+function getCoupons(){ return _coupons; }
+function getConfig(){  return _config || DEFAULT_CFG; }
+
+async function saveRecord(r)  { await fbSet('records', r.id, r); }
+async function saveMemberObj(m){ await fbSet('members', m.id, m); }
+async function saveCouponObj(c){ await fbSet('coupons', c.id, c); }
+async function saveConfig(c)  { _config=c; await fbSet('config', 'main', c); }
+async function deleteRecordFB(id){ await fbDel('records', id); }
+async function deleteMemberFB(id){ await fbDel('members', id); }
+async function deleteCouponFB(id){ await fbDel('coupons', id); }
+async function clearAllRecords(){ const s=await fb().getDocs(fb().collection(db(),'records')); for(const d of s.docs) await fb().deleteDoc(d.ref); }
+async function clearAllMembers(){ const s=await fb().getDocs(fb().collection(db(),'members')); for(const d of s.docs) await fb().deleteDoc(d.ref); }
+async function clearAllCoupons(){ const s=await fb().getDocs(fb().collection(db(),'coupons')); for(const d of s.docs) await fb().deleteDoc(d.ref); }
 
 // ── NAV ──
 function showView(id,btn){
@@ -696,12 +770,12 @@ function showMemberSection(m){
 }
 
 // ── MONTHLY CHECK-IN ──
-function handleMonthlyCheckin(){
+async function handleMonthlyCheckin(){
   const m    = foundMember;
   const used = (m.classesUsed||0)+1;
   const members = getMembers();
   const mi   = members.findIndex(x=>x.id===m.id);
-  if(mi!==-1){ members[mi].classesUsed=used; saveMembers(members); }
+  if(mi!==-1){ members[mi].classesUsed=used; await saveMemberObj(members[mi]); }
 
   const record = {
     id:Date.now(), timestamp:new Date().toISOString(),
@@ -710,7 +784,7 @@ function handleMonthlyCheckin(){
     status:'monthly', classNum:used,
     classTotal:PLANS[m.plan].limit, memberId:m.id
   };
-  const recs = getRecords(); recs.unshift(record); saveRecords(recs);
+  await saveRecord(record);
   lastRecordId = record.id;
 
   const limit = PLANS[m.plan].limit;
@@ -831,7 +905,7 @@ function resetPriceDisplays(){
 }
 
 // ── NEW CHECK-IN ──
-function handleNewCheckin(){
+async function handleNewCheckin(){
   const name  = document.getElementById('s1Name').value.trim();
   const phone = document.getElementById('s1Phone').value.trim();
   const plan  = currentPlan.plan;
@@ -846,9 +920,8 @@ function handleNewCheckin(){
       m.phone.replace(/\D/g,'').slice(-7)===phone.replace(/\D/g,'').slice(-7)
     );
     if(!existing){
-      const mems = getMembers();
-      mems.push({ id:Date.now(), name, phone, plan, classesUsed:1, since:new Date().toISOString() });
-      saveMembers(mems);
+      const newMem = { id:Date.now(), name, phone, plan, classesUsed:1, since:new Date().toISOString() };
+      await saveMemberObj(newMem);
     }
   }
 
@@ -860,7 +933,7 @@ function handleNewCheckin(){
     status:'pending',
     classNum:plan!=='drop-in'?1:null
   };
-  const recs = getRecords(); recs.unshift(record); saveRecords(recs);
+  await saveRecord(record);
   lastRecordId = record.id;
 
   // Build payment URLs
@@ -1076,28 +1149,17 @@ function openPayPicker(id,name){
   document.getElementById('ppName').textContent='Logging payment for '+name;
   document.getElementById('payPickerOverlay').classList.add('open');
 }
-function confirmPaid(method){
+async function confirmPaid(method){
   if(!payPickerTarget) return;
-  const recs=getRecords();
-  const i=recs.findIndex(r=>r.id===payPickerTarget);
-  if(i!==-1){recs[i].status=method;saveRecords(recs);renderStats();renderCheckins();}
+  const rec = getRecords().find(r=>r.id===payPickerTarget);
+  if(rec){ rec.status=method; await saveRecord(rec); }
   closeOverlay('payPickerOverlay'); payPickerTarget=null;
   const labels={cash:'Cash',cashapp:'Cash App',zelle:'Zelle'};
   showToast('Paid via '+labels[method]+' ✓');
 }
 function deleteRecord(id){
   if(!confirm('Delete this record?')) return;
-  saveRecords(getRecords().filter(r=>r.id!==id));
-  renderStats(); renderCheckins(); showToast('Deleted');
-}
-function exportCSV(){
-  const r=getRecords();
-  if(!r.length){showToast('No records');return;}
-  const rows=[['Date','Time','Name','Phone','Plan','Amount','Coupon','Status','Class#']];
-  r.forEach(x=>{const d=new Date(x.timestamp);rows.push([d.toLocaleDateString(),d.toLocaleTimeString(),x.name,x.phone,x.plan,'$'+(x.amount||0),x.couponUsed||'',x.status,x.classNum||'']);});
-  const csv=rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download=`checkins-${new Date().toISOString().slice(0,10)}.csv`;a.click();showToast('Exported!');
+  deleteRecordFB(id); showToast('Deleted');
 }
 
 // ── MEMBERS ──
@@ -1119,7 +1181,7 @@ function renderMembers(){
   if(!rows.length){tb.innerHTML='';em.style.display='block';return;}
   em.style.display='none';
   tb.innerHTML=rows.map(m=>{
-    const limit=PLANS[m.plan].limit;
+    const limit=PLANS[m.plan]?.limit||0;
     const used=m.classesUsed||0;
     const isUnlim=limit===999;
     const pct=isUnlim?Math.min(100,Math.round(used/30*100)):Math.min(100,Math.round(used/limit*100));
@@ -1143,21 +1205,19 @@ function renderMembers(){
     </tr>`;
   }).join('');
 }
-function renewMember(id){
+async function renewMember(id){
   if(!confirm('Reset class count to 0 for new month?')) return;
-  const mems=getMembers();
-  const i=mems.findIndex(m=>m.id===id);
-  if(i!==-1){mems[i].classesUsed=0;mems[i].since=new Date().toISOString();saveMembers(mems);}
-  renderMembers(); showToast('Member renewed ✓');
+  const m=getMembers().find(m=>m.id===id);
+  if(m){ m.classesUsed=0; m.since=new Date().toISOString(); await saveMemberObj(m); }
+  showToast('Member renewed ✓');
 }
-function deleteMember(id){
+async function deleteMember(id){
   if(!confirm('Remove this member?')) return;
-  saveMembers(getMembers().filter(m=>m.id!==id));
-  renderMembers(); showToast('Member removed');
+  await deleteMemberFB(id); showToast('Member removed');
 }
 
 // ── COUPONS ──
-function addCoupon(){
+async function addCoupon(){
   const code=document.getElementById('cpCode').value.trim().toUpperCase();
   const type=document.getElementById('cpType').value;
   const amt =parseFloat(document.getElementById('cpAmount').value);
@@ -1166,18 +1226,16 @@ function addCoupon(){
   if(!code){showToast('Enter a code');return;}
   if(!amt||isNaN(amt)||amt<=0){showToast('Enter a valid amount');return;}
   if(type==='pct'&&amt>100){showToast('Percentage cannot exceed 100');return;}
-  const coupons=getCoupons();
-  if(coupons.find(c=>c.code===code)){showToast('Code already exists');return;}
-  coupons.push({id:Date.now(),code,type,amount:amt,plan,desc});
-  saveCoupons(coupons);
+  if(getCoupons().find(c=>c.code===code)){showToast('Code already exists');return;}
+  const newCoupon={id:Date.now(),code,type,amount:amt,plan,desc};
+  await saveCouponObj(newCoupon);
   document.getElementById('cpCode').value='';
   document.getElementById('cpAmount').value='';
   document.getElementById('cpDesc').value='';
-  renderCoupons(); showToast('Coupon added ✓');
+  showToast('Coupon added ✓');
 }
-function deleteCoupon(id){
-  saveCoupons(getCoupons().filter(c=>c.id!==id));
-  renderCoupons(); showToast('Coupon deleted');
+async function deleteCoupon(id){
+  await deleteCouponFB(id); showToast('Coupon deleted');
 }
 function renderCoupons(){
   const coupons=getCoupons();
@@ -1209,38 +1267,40 @@ function loadSettings(){
   document.getElementById('secQ').value=c.secQ||'';
   document.getElementById('secA').value=c.secA||'';
 }
-function savePayHandles(){
+async function savePayHandles(){
   const c=getConfig();
   c.cashapp=document.getElementById('setCashApp').value.trim()||c.cashapp;
   c.zelle=document.getElementById('setZelle').value.trim()||c.zelle;
-  saveConfig(c); showToast('Saved ✓');
+  await saveConfig(c); showToast('Saved ✓');
 }
-function changePass(){
+async function changePass(){
   const np=document.getElementById('newPass').value;
   const cp=document.getElementById('confPass').value;
   if(!np){showToast('Enter a password');return;}
   if(np!==cp){showToast('Passwords do not match');return;}
-  const c=getConfig(); c.password=np; saveConfig(c);
+  const c=getConfig(); c.password=np; await saveConfig(c);
   document.getElementById('newPass').value='';
   document.getElementById('confPass').value='';
   showToast('Password updated ✓');
 }
-function saveSecQ(){
+async function saveSecQ(){
   const q=document.getElementById('secQ').value.trim();
   const a=document.getElementById('secA').value.trim();
   if(!q||!a){showToast('Enter both question and answer');return;}
-  const c=getConfig(); c.secQ=q; c.secA=a; saveConfig(c);
+  const c=getConfig(); c.secQ=q; c.secA=a; await saveConfig(c);
   showToast('Security question saved ✓');
 }
-function clearCheckins(){if(!confirm('Delete ALL check-in records?'))return;if(!confirm('Sure?'))return;localStorage.removeItem('gymRecords');renderStats();renderCheckins();showToast('Records cleared');}
-function clearMembers(){if(!confirm('Delete ALL members?'))return;localStorage.removeItem('gymMembers');renderMembers();showToast('Members cleared');}
-function clearCoupons(){if(!confirm('Delete ALL coupons?'))return;localStorage.removeItem('gymCoupons');renderCoupons();showToast('Coupons cleared');}
+async function clearCheckins(){if(!confirm('Delete ALL check-in records?'))return;if(!confirm('Sure?'))return;await clearAllRecords();showToast('Records cleared');}
+async function clearMembers(){if(!confirm('Delete ALL members?'))return;await clearAllMembers();showToast('Members cleared');}
+async function clearCoupons(){if(!confirm('Delete ALL coupons?'))return;await clearAllCoupons();showToast('Coupons cleared');}
 
 // ── TOAST ──
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 
-// Init
-if(!localStorage.getItem('gymConfig')) saveConfig(DEFAULT_CFG);
+// ── INIT — wait for Firebase then start listeners ──
+window.addEventListener('fbready', ()=>{
+  initListeners();
+});
 </script>
 </body>
 </html>
