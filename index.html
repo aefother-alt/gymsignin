@@ -486,7 +486,6 @@ tr:hover td{background:var(--surface);}
     <div class="form-group"><label>Password</label><input type="password" id="adminPass" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="primary-btn" style="font-size:16px;padding:13px" onclick="doLogin()">UNLOCK</button>
     <button class="ghost-btn" onclick="openForgot()">Forgot password?</button>
-    <p style="color:var(--muted);font-size:11px;margin-top:10px">Default: <strong style="color:var(--text)">gym2024</strong></p>
   </div>
 
   <!-- Dashboard -->
@@ -496,6 +495,7 @@ tr:hover td{background:var(--surface);}
       <button class="tab-btn" onclick="switchTab('members',this)">Members</button>
       <button class="tab-btn" onclick="switchTab('coupons',this)">Coupons</button>
       <button class="tab-btn" onclick="switchTab('settings',this)">Settings</button>
+      <button class="tab-btn" style="margin-left:auto;border-color:var(--danger);color:var(--danger)" onclick="adminSignOut()">⏻ Sign Out</button>
     </div>
 
     <!-- CHECK-INS -->
@@ -938,12 +938,26 @@ function maybeClose(id,e){ if(e.target===document.getElementById(id)) closeOverl
 function closeOverlay(id){ document.getElementById(id).classList.remove('open'); }
 
 // ── ADMIN LOGIN ──
+let autoLockTimer = null;
+function resetAutoLock(){
+  clearTimeout(autoLockTimer);
+  autoLockTimer = setTimeout(adminSignOut, 30*60*1000);
+}
+function adminSignOut(){
+  clearTimeout(autoLockTimer);
+  document.getElementById('adminDash').classList.remove('show');
+  document.getElementById('adminGate').style.display='block';
+  document.getElementById('adminPass').value='';
+  showToast('Signed out ✓');
+}
 function doLogin(){
   const pass=document.getElementById('adminPass').value;
   if(pass===getConfig().password){
     document.getElementById('adminGate').style.display='none';
     document.getElementById('adminDash').classList.add('show');
     renderStats(); renderCheckins(); renderMembers(); renderCoupons(); loadSettings();
+    resetAutoLock();
+    document.getElementById('adminDash').addEventListener('click', resetAutoLock);
   } else showToast('Incorrect password');
 }
 
