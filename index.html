@@ -290,6 +290,17 @@ tr:hover td{background:var(--surface);}
 ══════════════════════════════════ -->
 <div id="checkinView" class="view active">
 
+  <!-- ANNOUNCEMENT BANNER -->
+  <div id="announcementBar" style="display:none;background:rgba(232,255,71,0.08);border:1px solid rgba(232,255,71,0.3);border-radius:12px;padding:14px 16px;margin-bottom:20px;">
+    <div style="display:flex;align-items:flex-start;gap:10px;">
+      <span style="font-size:18px;flex-shrink:0" id="announceEmoji">📢</span>
+      <div style="flex:1">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:var(--accent);margin-bottom:3px" id="announceTitle"></div>
+        <div style="font-size:13px;color:var(--text);line-height:1.5" id="announceBody"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- STEP 1 — Who are you? -->
   <div id="step1" class="step active">
     <div class="step-indicator">
@@ -599,7 +610,23 @@ tr:hover td{background:var(--surface);}
         <button class="save-btn" onclick="savePayHandles()">SAVE</button>
       </div>
       <div class="settings-section">
-        <h3>Change Password</h3>
+        <h3>📢 Sign-In Screen Announcement</h3>
+        <p style="color:var(--muted);font-size:12px;margin-bottom:14px">This message shows on the sign-in screen for all members. Leave blank to hide it.</p>
+        <div class="form-group">
+          <label>Emoji (optional)</label>
+          <input type="text" id="announceEmojiInput" placeholder="e.g. 🎉 or 📢" style="max-width:100px">
+        </div>
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="announceTitleInput" placeholder="e.g. Class Update">
+        </div>
+        <div class="form-group">
+          <label>Message</label>
+          <input type="text" id="announceBodyInput" placeholder="e.g. No class this Saturday — see you Monday!">
+        </div>
+        <button class="save-btn" onclick="saveAnnouncement()">POST ANNOUNCEMENT</button>
+        <button class="danger-btn" onclick="clearAnnouncement()" style="margin-left:8px">CLEAR</button>
+      </div>
         <div class="form-group"><label>New Password</label><input type="password" id="newPass"></div>
         <div class="form-group"><label>Confirm</label><input type="password" id="confPass"></div>
         <button class="save-btn" onclick="changePass()">UPDATE</button>
@@ -693,7 +720,7 @@ function initListeners(){
   });
   // Config
   fb().onSnapshot(fb().doc(db(),'config','main'), snap => {
-    if(snap.exists()) _config = snap.data();
+    if(snap.exists()){ _config = snap.data(); renderAnnouncement(_config.announcement); }
   });
 }
 
@@ -1272,6 +1299,34 @@ function renderCoupons(){
   }).join('');
 }
 
+// ── ANNOUNCEMENT ──
+async function saveAnnouncement(){
+  const emoji = document.getElementById('announceEmojiInput').value.trim() || '📢';
+  const title = document.getElementById('announceTitleInput').value.trim();
+  const body  = document.getElementById('announceBodyInput').value.trim();
+  if(!title && !body){ showToast('Enter a title or message'); return; }
+  const c = getConfig();
+  c.announcement = { emoji, title, body, active:true };
+  await saveConfig(c);
+  renderAnnouncement(c.announcement);
+  showToast('Announcement posted ✓');
+}
+async function clearAnnouncement(){
+  const c = getConfig();
+  c.announcement = { active:false };
+  await saveConfig(c);
+  renderAnnouncement(c.announcement);
+  showToast('Announcement cleared');
+}
+function renderAnnouncement(a){
+  const bar = document.getElementById('announcementBar');
+  if(!a || !a.active){ bar.style.display='none'; return; }
+  document.getElementById('announceEmoji').textContent = a.emoji || '📢';
+  document.getElementById('announceTitle').textContent = a.title || '';
+  document.getElementById('announceBody').textContent  = a.body  || '';
+  bar.style.display = 'block';
+}
+
 // ── SETTINGS ──
 function loadSettings(){
   const c=getConfig();
@@ -1279,6 +1334,12 @@ function loadSettings(){
   document.getElementById('setZelle').value=c.zelle||'';
   document.getElementById('secQ').value=c.secQ||'';
   document.getElementById('secA').value=c.secA||'';
+  const a=c.announcement;
+  if(a&&a.active){
+    document.getElementById('announceEmojiInput').value=a.emoji||'';
+    document.getElementById('announceTitleInput').value=a.title||'';
+    document.getElementById('announceBodyInput').value=a.body||'';
+  }
 }
 async function savePayHandles(){
   const c=getConfig();
