@@ -431,51 +431,24 @@ tr:hover td{background:var(--surface);}
     <h2>YOU'RE IN!</h2>
     <div class="success-name" id="pyName"></div>
     <div class="success-sub" id="pySub"></div>
-    <div class="pay-label">Tap a button to pay</div>
+    <div class="pay-label">Tap to pay</div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;" id="payBtnGrid">
-
-      <!-- CASH APP -->
-      <div onclick="togglePayCard('cash')" id="card-cash" style="background:#091a0b;border:2px solid var(--cash);border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--cash);margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 7.1c-.2-.7-.8-1.1-1.5-1.1h-1.8l-.4-1.6c-.1-.5-.6-.9-1.1-.9h-4.2c-.5 0-1 .4-1.1.9L8.4 6H6.6c-.7 0-1.3.4-1.5 1.1L4 13c-.3 1.1.5 2.1 1.6 2.1h12.8c1.1 0 1.9-1 1.6-2.1L18.9 7.1zM12 14c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z"/></svg>
-          CASH APP
-        </div>
-        <div id="qr-cash-wrap" style="display:none">
-          <div style="background:#fff;border-radius:8px;padding:6px;margin-bottom:8px;" id="qrCash"></div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--cash)" id="qrCashAmt"></div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">$elkyfriedman</div>
-          <a id="cashLink" href="#" target="_blank" style="display:block;background:var(--cash);color:#000;padding:9px;border-radius:7px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;text-decoration:none">OPEN APP</a>
-        </div>
-        <div id="qr-cash-hint" style="font-size:11px;color:var(--muted);margin-top:4px">TAP TO PAY</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px;">
+      <div onclick="showPayModal('cash')" style="background:#091a0b;border:2px solid var(--cash);border-radius:14px;padding:22px 8px;text-align:center;cursor:pointer;">
+        <div style="font-size:30px;margin-bottom:8px">💚</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:var(--cash)">CASH APP</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">Scan or tap</div>
       </div>
-
-      <!-- ZELLE -->
-      <div onclick="togglePayCard('zelle')" id="card-zelle" style="background:#120a1f;border:2px solid #7c3aed;border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#a855f7;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2L4 14h7.5L9 22l11-12h-7.5L13.5 2z"/></svg>
-          ZELLE
-        </div>
-        <div id="qr-zelle-wrap" style="display:none">
-          <div style="background:#fff;border-radius:8px;padding:6px;margin-bottom:8px;" id="qrZelle"></div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#a855f7" id="qrZelleAmt"></div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">7323304707</div>
-          <a id="zelleLink" href="#" target="_blank" style="display:block;background:var(--zelle);color:#fff;padding:9px;border-radius:7px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;text-decoration:none">OPEN APP</a>
-        </div>
-        <div id="qr-zelle-hint" style="font-size:11px;color:var(--muted);margin-top:4px">TAP TO PAY</div>
+      <div onclick="showPayModal('zelle')" style="background:#120a1f;border:2px solid #7c3aed;border-radius:14px;padding:22px 8px;text-align:center;cursor:pointer;">
+        <div style="font-size:30px;margin-bottom:8px">💜</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:#a855f7">ZELLE</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">Scan or tap</div>
       </div>
-
-      <!-- CARD -->
-      <div onclick="openSquare()" id="card-square" style="background:#00102e;border:2px solid #006aff;border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#006aff;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
-          CARD
-        </div>
-        <div style="font-size:28px;margin:10px 0">💳</div>
-        <div style="font-size:11px;color:#006aff;font-family:'Bebas Neue',sans-serif;letter-spacing:1px">TAP TO PAY</div>
-        <a id="squareLink" href="#" target="_blank" style="display:none"></a>
+      <div onclick="showPayModal('square')" style="background:#00102e;border:2px solid #006aff;border-radius:14px;padding:22px 8px;text-align:center;cursor:pointer;">
+        <div style="font-size:30px;margin-bottom:8px">💳</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:#006aff">CARD</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">Tap to pay</div>
       </div>
-
     </div>
 
     <button class="sent-payment-btn" id="sentBtn" onclick="sentPayment()">✓ &nbsp;I SENT MY PAYMENT</button>
@@ -483,11 +456,11 @@ tr:hover td{background:var(--surface);}
   </div>
 </div>
 
-<!-- QR MODAL -->
+<!-- QR / PAY MODAL -->
 <div class="modal-overlay" id="qrOverlay" onclick="maybeClose('qrOverlay',event)">
   <div class="modal">
     <h3 id="qrMTitle"></h3>
-    <div class="modal-sub">Point camera at QR to pay</div>
+    <div class="modal-sub" id="qrMSub">Point camera at QR to pay</div>
     <div class="modal-qr" id="qrMBox"></div>
     <div class="modal-amount" id="qrMAmt"></div>
     <div class="modal-handle" id="qrMHandle"></div>
@@ -1044,20 +1017,10 @@ async function handleNewCheckin(){
   const tag      = cfg.cashapp.replace('$','');
   const cashUrl  = `https://cash.app/$${tag}/${amt}`;
   const zelleUrl = `https://enroll.zellepay.com/qr-codes?data=${encodeURIComponent(JSON.stringify({alias:cfg.zelle,amount:amt}))}`;
-  qrData = { cashUrl, zelleUrl, amount:amt, cashHandle:cfg.cashapp, zelleHandle:cfg.zelle };
+  qrData = { cashUrl, zelleUrl, amount:amt, cashHandle:cfg.cashapp, zelleHandle:cfg.zelle, squareUrl: SQUARE_LINKS[plan]||SQUARE_LINKS['drop-in'] };
 
   document.getElementById('pyName').textContent = name.toUpperCase();
   document.getElementById('pySub').textContent  = `${PLANS[plan].label}${activeCoupon?' · Coupon: '+activeCoupon.code:''} · $${amt}`;
-  document.getElementById('qrCashAmt').textContent  = '$'+amt;
-  document.getElementById('qrZelleAmt').textContent = '$'+amt;
-  document.getElementById('cashLink').href  = cashUrl;
-  document.getElementById('zelleLink').href = zelleUrl;
-  document.getElementById('squareLink').href = SQUARE_LINKS[plan] || SQUARE_LINKS['drop-in'];
-  // Reset card states
-  ['cash','zelle'].forEach(t=>{
-    document.getElementById('qr-'+t+'-wrap').style.display='none';
-    document.getElementById('qr-'+t+'-hint').style.display='block';
-  });
 
   document.getElementById('step2').classList.remove('active');
   document.getElementById('paySuccess').classList.add('show');
@@ -1085,31 +1048,45 @@ function resetAll(){
   if(btn){btn.classList.remove('confirmed');btn.disabled=false;btn.innerHTML='✓ &nbsp;I SENT MY PAYMENT';}
 }
 
-// ── QR ──
-function makeQR(elId,url,size){
-  const el=document.getElementById(elId); if(!el) return;
-  el.innerHTML='';
-  new QRCode(el,{text:url,width:size,height:size,correctLevel:QRCode.CorrectLevel.M});
+// ── QR ── using Google Charts API (always works, no library needed)
+function makeQRImg(url, size){
+  const encoded = encodeURIComponent(url);
+  return `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encoded}" width="${size}" height="${size}" style="display:block;border-radius:4px;">`;
 }
-function togglePayCard(type){
-  const isOpen = document.getElementById('qr-'+type+'-wrap').style.display !== 'none';
-  // Close all first
-  ['cash','zelle'].forEach(t=>{
-    document.getElementById('qr-'+t+'-wrap').style.display='none';
-    document.getElementById('qr-'+t+'-hint').style.display='block';
-    document.getElementById('qrC'+(t==='cash'?'ash':'elle')).innerHTML='';
-  });
-  if(!isOpen){
-    document.getElementById('qr-'+type+'-wrap').style.display='block';
-    document.getElementById('qr-'+type+'-hint').style.display='none';
-    const url = type==='cash' ? qrData.cashUrl : qrData.zelleUrl;
-    const elId = type==='cash' ? 'qrCash' : 'qrZelle';
-    setTimeout(()=>makeQR(elId, url, 160), 60);
+
+function showPayModal(type){
+  const box = document.getElementById('qrMBox');
+  const amt = qrData.amount;
+  box.innerHTML = '';
+
+  if(type==='cash'){
+    document.getElementById('qrMTitle').textContent = 'PAY WITH CASH APP';
+    document.getElementById('qrMTitle').style.color = 'var(--cash)';
+    document.getElementById('qrMAmt').textContent   = '$'+amt;
+    document.getElementById('qrMAmt').style.color   = 'var(--cash)';
+    document.getElementById('qrMHandle').textContent= '$elkyfriedman';
+    document.getElementById('qrMSub').textContent   = 'Scan QR or tap Open App';
+    box.innerHTML = makeQRImg(qrData.cashUrl, 180);
+    const l = document.getElementById('qrMLink');
+    l.textContent='OPEN CASH APP'; l.href=qrData.cashUrl;
+    l.style.background='var(--cash)'; l.style.color='#000'; l.style.display='block';
+  } else if(type==='zelle'){
+    document.getElementById('qrMTitle').textContent = 'PAY WITH ZELLE';
+    document.getElementById('qrMTitle').style.color = '#a855f7';
+    document.getElementById('qrMAmt').textContent   = '$'+amt;
+    document.getElementById('qrMAmt').style.color   = '#a855f7';
+    document.getElementById('qrMHandle').textContent= '7323304707';
+    document.getElementById('qrMSub').textContent   = 'Scan QR or tap Open App';
+    box.innerHTML = makeQRImg(qrData.zelleUrl, 180);
+    const l = document.getElementById('qrMLink');
+    l.textContent='OPEN ZELLE'; l.href=qrData.zelleUrl;
+    l.style.background='var(--zelle)'; l.style.color='#fff'; l.style.display='block';
+  } else {
+    // Square — open directly
+    if(qrData.squareUrl) window.open(qrData.squareUrl, '_blank');
+    return;
   }
-}
-function openSquare(){
-  const link = document.getElementById('squareLink');
-  if(link && link.href && link.href !== '#') window.open(link.href, '_blank');
+  document.getElementById('qrOverlay').classList.add('open');
 }
 
 // ── MODALS ──
