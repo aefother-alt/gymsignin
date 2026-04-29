@@ -777,6 +777,7 @@ function isNewMonth(member){
 
 // ── STEP 1 → 2 ──
 async function proceedFromStep1(){
+  if(!window._fbReady){ showToast('Loading... please try again in a moment'); return; }
   const name  = document.getElementById('s1Name').value.trim();
   const phone = document.getElementById('s1Phone').value.trim();
   if(!name)  { showToast('Please enter your name'); return; }
@@ -995,12 +996,15 @@ function resetPriceDisplays(){
 
 // ── NEW CHECK-IN ──
 async function handleNewCheckin(){
+  if(!window._fbReady){ showToast('Loading... please try again'); return; }
   const name  = document.getElementById('s1Name').value.trim();
   const phone = document.getElementById('s1Phone').value.trim();
   const plan  = currentPlan.plan;
   const amt   = currentPlan.final;
   const base  = currentPlan.base;
   const cfg   = getConfig();
+
+  try {
 
   // Register monthly member
   if(plan!=='drop-in'){
@@ -1057,6 +1061,7 @@ async function handleNewCheckin(){
 
   document.getElementById('step2').classList.remove('active');
   document.getElementById('paySuccess').classList.add('show');
+  } catch(e){ console.error(e); showToast('Something went wrong — try again'); }
 }
 
 function sentPayment(){
